@@ -8,4 +8,4 @@ RUN apt-get update -y && \
 ADD run-tests.sh /run-tests.sh
 ADD config.fio /config.fio
 
-ENTRYPOINT [ "run-tests.sh" ]
+ENTRYPOINT [ "/run-tests.sh" ]
