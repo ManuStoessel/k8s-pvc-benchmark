@@ -1,0 +1,148 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: benchmark-rbd
+  labels:
+    app: fio-benchmark
+data:
+  config.fio: |
+    [global]
+    size=${FIO_FILESIZE}
+    ioengine=${FIO_IOENGINE}
+    iodepth=${FIO_IODEPTH}
+    invalidate=1
+    direct=${FIO_DIRECT}
+    numjobs=${FIO_PARALLELISM}
+    group_reporting=${FIO_GROUP_REPORTING}
+    runtime=${FIO_RUNTIME}
+    blocksize=${FIO_BLOCKSIZE}
+    clustername=${FIO_RBD_CLUSTERNAME}
+    rbdname=${FIO_RBD_NAME}
+    pool=${FIO_RBD_POOL}
+    clientname=${FIO_RBD_CLIENTNAME}
+    busy_poll=1
+    
+    [seqRead]
+    rw=read
+    write_bw_log=read
+    write_iops_log=read
+    
+    [seqWrite]
+    rw=write
+    write_bw_log=write
+    write_iops_log=write
+    
+    [seqReadWrite]
+    rw=rw
+    write_bw_log=readwrite
+    write_iops_log=readwrite
+    
+    [randRead]
+    rw=randRead
+    write_bw_log=randread
+    write_iops_log=randread
+    
+    [randWrite]
+    rw=randWrite
+    write_bw_log=randwrite
+    write_iops_log=randwrite
+    
+    [randReadWrite]
+    rm=randrw
+    write_bw_log=randreadwrite
+    write_iops_log=randreadwrite
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fio-benchmark
+  labels:
+    app: fio-benchmark
+spec:
+  selector:
+    matchLabels:
+      app: fio-benchmark
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fio-benchmark
+    spec:
+      containers:
+      - name: fio
+        image: quay.io/loodsemanuel/k8s-pvc-benchmark:v0.0.2
+        args: ["/tmp/fio-config/config.fio"]
+        resources:
+          requests:
+            cpu: "6"
+            memory: "6Gi"
+          limits:
+            cpu: "12"
+            memory: "12Gi"
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: "/tmp/fio-data"
+          name: fio-data-volume
+        - mountPath: "/tmp/fio-config"
+          name: fio-config
+        env:
+          - name: FIO_IOENGINE
+            value: "rbd"
+          - name: FIO_DIRECT
+            value: "1"
+          - name: FIO_IODEPTH
+            value: "4"
+          - name: FIO_FILESIZE
+            value: "512m"
+          - name: FIO_PARALLELISM
+            value: "1"
+          - name: FIO_GROUP_REPORTING
+            value: "0"
+          - name: FIO_RUNTIME
+            value: "120s"
+          - name: FIO_BLOCKSIZE
+            value: "4k"
+          - name: FIO_RBD_CLUSTERNAME
+            value: "XXX"
+          - name: FIO_RBD_POOL
+            value: "kubernetes"
+          - name: FIO_RBD_NAME
+            value: "XXX"
+          - name: FIO_RBD_CLIENTNAME
+            value: "XXX"
+          - name: PODNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NODENAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      volumes:
+      - name: fio-data-volume
+        persistentVolumeClaim:
+          claimName: benchmark-pvc
+      - name: fio-config
+        configMap:
+          name: benchmark-rbd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fio-benchmark
+  labels:
+    name: fio-benchmark
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: fio-benchmark

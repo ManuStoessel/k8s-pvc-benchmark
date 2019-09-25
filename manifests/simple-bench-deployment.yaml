@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-pvc
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fio-benchmark
+  labels:
+    app: fio-benchmark
+spec:
+  selector:
+    matchLabels:
+      app: fio-benchmark
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fio-benchmark
+    spec:
+      containers:
+      - name: fio
+        image: quay.io/loodsemanuel/k8s-pvc-benchmark:v0.0.2
+        resources:
+          requests:
+            cpu: "6"
+            memory: "6Gi"
+          limits:
+            cpu: "12"
+            memory: "12Gi"
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: "/tmp/fio-data"
+          name: fio-data-volume
+        env:
+          - name: FIO_IOENGINE
+            value: "libaio"
+          - name: FIO_DIRECTORY
+            value: "/tmp/fio-data"
+          - name: FIO_DIRECT
+            value: "1"
+          - name: FIO_IODEPTH
+            value: "4"
+          - name: FIO_FILESIZE
+            value: "512m"
+          - name: FIO_PARALLELISM
+            value: "1"
+          - name: FIO_GROUP_REPORTING
+            value: "0"
+          - name: FIO_RUNTIME
+            value: "120s"
+          - name: FIO_BLOCKSIZE
+            value: "4k"
+          - name: PODNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NODENAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      volumes:
+      - name: fio-data-volume
+        persistentVolumeClaim:
+          claimName: benchmark-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fio-benchmark
+  labels:
+    name: fio-benchmark
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: fio-benchmark

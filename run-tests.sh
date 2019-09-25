@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 
-if [ -z "$FIO_TEST_PATH" ]
-then
-    FIO_TEST_PATH="/fio-data"
+if [ -z "$1" ]; then
+    echo "First parameter needs to specify fio config file!"
+    exit 1
 fi
 
-if [ -z "$FIO_CONF_FILE" ]
-then
-    FIO_CONF_FILE="/config.fio"
-fi
+fio $1 --output=fio.output
 
-sed -i s@___FIO_DATA_DIR___@"$FIO_TEST_PATH"@ $FIO_CONF_FILE
+/fio/tools/fio2gnuplot -t $NODENAME-$PODNAME.iops -i -g -p '*_iops*.log'
+/fio/tools/fio2gnuplot -t $NODENAME-$PODNAME.bandwidth -b -g -p '*_bw*.log'
 
-fio $FIO_CONF_FILE --output=$FIO_TEST_PATH/fio-results.txt
+python -m SimpleHTTPServer 8000

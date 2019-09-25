@@ -1,11 +1,18 @@
 FROM ubuntu:18.04
 
 RUN apt-get update -y && \
-    apt-get install -y fio && \
+    apt-get install -y fio git gnuplot && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    git clone https://github.com/axboe/fio.git && \
+    mkdir -p /opt/fio
 
-ADD run-tests.sh /run-tests.sh
-ADD config.fio /config.fio
+WORKDIR /opt/fio
 
-ENTRYPOINT [ "/run-tests.sh" ]
+ADD run-tests.sh /opt/fio/run-tests
+RUN chmod +x /opt/fio/run-tests
+
+ADD config.fio /opt/fio/config.fio
+
+ENTRYPOINT [ "./run-tests" ]
+CMD [ "config.fio" ]
