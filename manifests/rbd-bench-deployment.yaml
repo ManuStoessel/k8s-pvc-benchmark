@@ -43,7 +43,7 @@ data:
     write_iops_log=randread
     
     [randWrite]
-    rw=randrrite
+    rw=randwrite
     write_bw_log=randwrite
     write_iops_log=randwrite
     
