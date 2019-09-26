@@ -5,6 +5,8 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+/opt/fio/toolbox.sh
+
 fio $1 --output=fio.output
 
 /opt/fio/sources/tools/plot/fio2gnuplot -t $NODENAME-$PODNAME.iops -i -g -p '*_iops*.log'

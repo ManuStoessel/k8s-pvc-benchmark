@@ -11,7 +11,9 @@ RUN apt-get update -y && \
 WORKDIR /opt/fio
 
 ADD run-tests.sh /opt/fio/run-tests
-RUN chmod +x /opt/fio/run-tests
+ADD toolbox.sh /opt/fio/toolbox.sh
+RUN chmod +x /opt/fio/run-tests && \
+    chmod +x /opt/fio/toolbox.sh
 
 ADD config.fio /opt/fio/config.fio
 

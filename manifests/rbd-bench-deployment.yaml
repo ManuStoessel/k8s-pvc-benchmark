@@ -92,6 +92,8 @@ spec:
           name: fio-data-volume
         - mountPath: "/tmp/fio-config"
           name: fio-config
+        - name: mon-endpoint-volume
+          mountPath: /etc/rook
         env:
           - name: FIO_IOENGINE
             value: "rbd"
@@ -110,7 +112,10 @@ spec:
           - name: FIO_BLOCKSIZE
             value: "4k"
           - name: FIO_RBD_CLUSTERNAME
-            value: "rook-ceph"
+            valueFrom:
+              secretKeyRef:
+                name: rook-ceph-mon
+                key: cluster-name
           - name: FIO_RBD_POOL
             value: "replicapool"
           - name: FIO_RBD_NAME
@@ -125,6 +130,11 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: ROOK_ADMIN_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: rook-ceph-mon
+                key: admin-secret
       volumes:
       - name: fio-data-volume
         persistentVolumeClaim:
@@ -132,6 +142,12 @@ spec:
       - name: fio-config
         configMap:
           name: benchmark-rbd
+      - name: mon-endpoint-volume
+        configMap:
+          name: rook-ceph-mon-endpoints
+          items:
+          - key: data
+            path: mon-endpoints
 ---
 apiVersion: v1
 kind: Service
