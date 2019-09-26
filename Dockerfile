@@ -4,8 +4,9 @@ RUN apt-get update -y && \
     apt-get install -y fio git gnuplot && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    git clone https://github.com/axboe/fio.git && \
-    mkdir -p /opt/fio
+    mkdir -p /opt/fio && \
+    git clone https://github.com/axboe/fio.git /opt/fio/sources && \
+    chmod +x -R /opt/fio/sources/tools
 
 WORKDIR /opt/fio
 

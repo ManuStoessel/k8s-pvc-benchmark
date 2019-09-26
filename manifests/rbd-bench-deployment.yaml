@@ -38,12 +38,12 @@ data:
     write_iops_log=readwrite
     
     [randRead]
-    rw=randRead
+    rw=randread
     write_bw_log=randread
     write_iops_log=randread
     
     [randWrite]
-    rw=randWrite
+    rw=randrrite
     write_bw_log=randwrite
     write_iops_log=randwrite
     
@@ -55,13 +55,13 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fio-benchmark
+  name: fio-benchmark-00
   labels:
     app: fio-benchmark
 spec:
   selector:
     matchLabels:
-      app: fio-benchmark
+      app: fio-benchmark-00
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -70,8 +70,9 @@ spec:
   replicas: 1
   template:
     metadata:
+      name: test00
       labels:
-        app: fio-benchmark
+        app: fio-benchmark-00
     spec:
       containers:
       - name: fio
@@ -109,13 +110,13 @@ spec:
           - name: FIO_BLOCKSIZE
             value: "4k"
           - name: FIO_RBD_CLUSTERNAME
-            value: "XXX"
+            value: "rook-ceph"
           - name: FIO_RBD_POOL
-            value: "kubernetes"
+            value: "replicapool"
           - name: FIO_RBD_NAME
-            value: "XXX"
+            value: "test00"
           - name: FIO_RBD_CLIENTNAME
-            value: "XXX"
+            value: "admin"
           - name: PODNAME
             valueFrom:
               fieldRef:

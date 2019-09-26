@@ -26,12 +26,12 @@ write_bw_log=readwrite
 write_iops_log=readwrite
 
 [randRead]
-rw=randRead
+rw=randread
 write_bw_log=randread
 write_iops_log=randread
 
 [randWrite]
-rw=randWrite
+rw=randwrite
 write_bw_log=randwrite
 write_iops_log=randwrite
 

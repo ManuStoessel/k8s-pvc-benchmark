@@ -7,7 +7,7 @@ fi
 
 fio $1 --output=fio.output
 
-/fio/tools/fio2gnuplot -t $NODENAME-$PODNAME.iops -i -g -p '*_iops*.log'
-/fio/tools/fio2gnuplot -t $NODENAME-$PODNAME.bandwidth -b -g -p '*_bw*.log'
+/opt/fio/sources/tools/plot/fio2gnuplot -t $NODENAME-$PODNAME.iops -i -g -p '*_iops*.log'
+/opt/fio/sources/tools/plot/fio2gnuplot -t $NODENAME-$PODNAME.bandwidth -b -g -p '*_bw*.log'
 
 python -m SimpleHTTPServer 8000
