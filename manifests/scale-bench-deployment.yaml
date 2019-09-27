@@ -1,0 +1,214 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-pvc-00
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-pvc-01
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-pvc-02
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-pvc-03
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: benchmark-rbd
+  labels:
+    app: fio-benchmark
+data:
+  config.fio: |
+    [global]
+    size=${FIO_FILESIZE}
+    ioengine=libaio
+    iodepth=${FIO_IODEPTH}
+    invalidate=1
+    direct=${FIO_DIRECT}
+    numjobs=${FIO_PARALLELISM}
+    group_reporting=${FIO_GROUP_REPORTING}
+    runtime=${FIO_RUNTIME}
+    blocksize=${FIO_BLOCKSIZE}
+    
+    [seqReadWrite]
+    rw=rw
+    write_bw_log=readwrite_00
+    write_iops_log=readwrite_00
+    directory=/tmp/fio-00
+
+    [randReadWrite]
+    rw=randrw
+    write_bw_log=randreadwrite_00
+    write_iops_log=randreadwrite_00
+    directory=/tmp/fio-00
+
+    [seqReadWrite]
+    rw=rw
+    write_bw_log=readwrite_01
+    write_iops_log=readwrite_01
+    directory=/tmp/fio-01
+    
+    [randReadWrite]
+    rw=randrw
+    write_bw_log=randreadwrite_01
+    write_iops_log=randreadwrite_01
+    directory=/tmp/fio-01
+
+    [seqReadWrite]
+    rw=rw
+    write_bw_log=readwrite_02
+    write_iops_log=readwrite_02
+    directory=/tmp/fio-02
+    
+    [randReadWrite]
+    rw=randrw
+    write_bw_log=randreadwrite_02
+    write_iops_log=randreadwrite_02
+    directory=/tmp/fio-02
+
+    [seqReadWrite]
+    rw=rw
+    write_bw_log=readwrite_03
+    write_iops_log=readwrite_03
+    directory=/tmp/fio-03
+    
+    [randReadWrite]
+    rw=randrw
+    write_bw_log=randreadwrite_03
+    write_iops_log=randreadwrite_03
+    directory=/tmp/fio-03
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fio-benchmark
+  labels:
+    app: fio-benchmark
+spec:
+  selector:
+    matchLabels:
+      app: fio-benchmark
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fio-benchmark
+    spec:
+      containers:
+      - name: fio
+        image: quay.io/loodsemanuel/k8s-pvc-benchmark:v0.0.7
+        args: ["/tmp/fio-config/config.fio", "file"]
+        resources:
+          requests:
+            cpu: "6"
+            memory: "6Gi"
+          limits:
+            cpu: "12"
+            memory: "12Gi"
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: "/tmp/fio-00"
+          name: fio-00
+        - mountPath: "/tmp/fio-01"
+          name: fio-01
+        - mountPath: "/tmp/fio-02"
+          name: fio-02
+        - mountPath: "/tmp/fio-03"
+          name: fio-03
+        - mountPath: "/tmp/fio-config"
+          name: fio-config
+        env:
+          - name: FIO_DIRECT
+            value: "1"
+          - name: FIO_IODEPTH
+            value: "16"
+          - name: FIO_FILESIZE
+            value: "512m"
+          - name: FIO_PARALLELISM
+            value: "1"
+          - name: FIO_GROUP_REPORTING
+            value: "0"
+          - name: FIO_RUNTIME
+            value: "120s"
+          - name: FIO_BLOCKSIZE
+            value: "4k"
+          - name: PODNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NODENAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      volumes:
+      - name: fio-00
+        persistentVolumeClaim:
+          claimName: benchmark-pvc-00
+      - name: fio-01
+        persistentVolumeClaim:
+          claimName: benchmark-pvc-01
+      - name: fio-02
+        persistentVolumeClaim:
+          claimName: benchmark-pvc-02
+      - name: fio-03
+        persistentVolumeClaim:
+          claimName: benchmark-pvc-03
+      - name: fio-config
+        configMap:
+          name: benchmark-rbd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fio-benchmark
+  labels:
+    name: fio-benchmark
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: fio-benchmark

@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: fio
-        image: quay.io/loodsemanuel/k8s-pvc-benchmark:v0.0.2
+        image: quay.io/loodsemanuel/k8s-pvc-benchmark:v0.0.7
         resources:
           requests:
             cpu: "6"
