@@ -8,9 +8,9 @@ fi
 if [ -z "$2" ]; then
     echo "Second parameter must specify mode: rbd or file"
     exit 1
-elif [ "$2" == "file" ]
+elif [ "$2" == "file" ]; then
     fio $1
-elif [ "$2" == "rbd" ]
+elif [ "$2" == "rbd" ]; then
     /opt/fio/toolbox.sh
     fio $1
 fi
